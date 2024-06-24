@@ -1,3 +1,5 @@
+## utilize openai model to pull conversations from text<br/>
+```ruby
 import openai
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 import json
@@ -99,7 +101,9 @@ def append_to_json_file(filename, new_data):
 
 file_path = "<file-path>"
 lines = read_file(file_path)
-
+```
+## batch processing script to manage rate limits
+```ruby
 batch_size = 1000
 num_batches = len(lines) // batch_size + (1 if len(lines) % batch_size != 0 else 0)
 
@@ -123,3 +127,4 @@ for i in range(num_batches):
         print(json.dumps(formatted_qa_blocks, indent=2))
     else:
         print(f"No Q&A pairs found in batch {i + 1}")
+```
