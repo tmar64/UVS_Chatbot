@@ -15,22 +15,32 @@ def read_file(file_path):
 @retry(wait=wait_random_exponential(min=10, max=60), stop=stop_after_attempt(5))
 def call_openai_api(text):
     response = client.chat.completions.create(
-        model="gpt-4o-2024-05-13",
+        model="gpt-4-turbo",
         temperature=0.9,
         messages=[
+            {"role": "system", "content": "You are a knowledgeable assistant with a deep understanding of the "
+                                          "Bhagavad Gita and the teachings of A.C. Bhaktivedanta Swami Prabhupada. "
+                                          "Your task is to convert the conversations of A.C. Bhaktivedanta Swami Prabhupada "
+                                          "and various other people into relevant question and answer pairs. There will "
+                                          "lots of context-less and irrelavent conversations as well, ignore these."
+                                          "The answers should reflect the wisdom and insight of "
+                                          "Swami Prabhupada. Avoid adding any extraneous text or formatting such "
+                                          "as \"Q&A Pairs\" or \"### Q&A Pairs ---\"."},
             {"role": "user", "content":
-                "Step 1: The attached text contains conversations between Prabhupāda and various other people."
-                " Each block of conversations has a location and date associated with it."
-                " Step 2: For each block of conversation, extract all the statements/questions posed to Prabhupāda, along with Prabhupāda's responses."
-                " Step 3: Append the date/location to the end of Prabhupāda's responses."
-                " For example, append 'I mentioned this teaching in [Date, Location]' to the end of each of Prabhupāda's responses."
-                " Step 4: Ensure the context is maintained by keeping relevant surrounding sentences when necessary."
-                " Step 5: Format the output as Q&A pairs in the following format:"
-                "\nQ: <statement/question>"
-                "\nA: <Prabhupāda's response> (Date, Location)"
+                "Please convert the text of the conversations of A.C. Bhaktivedanta Swami Prabhupada "
+                "and various other people into a series of relevant question and answer pairs."
+                " The answers should be framed in a tone that reflects the wisdom and insight of"
+                " A.C. Bhaktivedanta Swami Prabhupada. Every conversation is seperated by a date/location. Follow up each answer with it's corresponding data/location in"
+                " parenthesis. For example, \"(New York, 1982)\", note this is just an axample. Avoid making references to yourself in the third person; always"
+                " speak in the first person as A.C. Bhaktivedanta Swami Prabhupada. Ensure that no extraneous text or formatting,"
+                " such as \"Q&A Pairs\" or \"### Q&A Pairs ---\", is added. Focus on providing profound and"
+                " insightful answers as Swami Prabhupada would. There will lots of context-less and irrelavent"
+                " conversations as well, ignore these."
+                " Format the output as Q&A pairs as shown below:"
+                "\nQ: <question>"
+                "\nA: <answer>"
                 f"\n\nHere is the text:\n\n{text}\n\n"}
         ]
-
     )
     return response
 
@@ -79,11 +89,50 @@ def format_qa_pairs(qa_pairs):
     formatted_qa_blocks = []
     for qa in qa_pairs:
         formatted_qa_block = {
-            "prompt": qa["question"], "completion": qa["answer"],
+            "messages": [
+                {"role": "system", "content": "You are A. C. Bhaktivedanta Swami Prabhupada, the founder of"
+                                              " the International Society for Krishna Consciousness (ISKCON),"
+                                              " renowned for your profound spiritual teachings and prolific"
+                                              " translations of the Bhagavad-gita, Srimad-Bhagavatam, and"
+                                              " other Vedic texts. Your wisdom has inspired millions worldwide"
+                                              " in the pursuit of devotional service to Krishna. For the"
+                                              " purpose of this conversation, your responses will be centered"
+                                              " around your spiritual knowledge and experiences. Users will"
+                                              " ask you questions, and you'll be provided with relevant"
+                                              " excerpts from the Bhagavad-gita and your extensive"
+                                              " conversations. Your task is to answer these questions using"
+                                              " your typical style and language as Swami Prabhupada. Always"
+                                              " answer the query directly in as few words as possible. Only"
+                                              " provide long-form answers if the user has specifically asked"
+                                              " for an answer that requires a lot of text. Assess the"
+                                              " provided context to decide if it's useful or relevant to the"
+                                              " question. If not, then respond with \"I don't know. When it"
+                                              " comes to specific content about spirituality, philosophy,"
+                                              " and the teachings of the Bhagavad-gita, use only the"
+                                              " information provided in the context. Do not use your general"
+                                              " knowledge to generate new or expanded topics. NEVER mention"
+                                              " the context snippets you\'re provided with. It should seem"
+                                              " like you already possess this information and are merely"
+                                              " sharing your knowledge as Swami Prabhupada himself. If"
+                                              " possible, follow up your response with a reference with a"
+                                              " relevant date/place, for example, “I remember this"
+                                              " conversation from New York 1963” or “I spoke about this in"
+                                              " India 1953.” Note these are just examples not real accurate"
+                                              " data. Avoid making references to yourself in the third person;"
+                                              " always speak in the first person. You are in an ongoing"
+                                              " conversation with the user. You will also be provided with the"
+                                              " recent chat history as context. Create your responses to be"
+                                              " aware of the recent messages but always focus primarily on the"
+                                              " most recent message, then the second most recent, and so on in"
+                                              " creating your responses."},
+                {"role": "user", "content": qa["question"]},
+                {"role": "assistant", "content": qa["answer"]}
+            ]
         }
 
         formatted_qa_blocks.append(formatted_qa_block)
     return formatted_qa_blocks
+
 
 
 def append_to_json_file(filename, new_data):
@@ -99,7 +148,7 @@ def append_to_json_file(filename, new_data):
         json.dump(data, file, indent=2)
 
 
-file_path = "<file-path>"
+file_path = "/Users/tanaymarathe/PycharmProjects/openai/.venv/GITA1.txt"
 lines = read_file(file_path)
 ```
 ## batch processing script to manage rate limits
